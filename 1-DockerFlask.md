@@ -88,5 +88,3 @@ Para hacer el ejercicio un poco más avanzado, puedes usar Docker Compose para g
    ```
 
 3. **Accede a la aplicación**: De nuevo, abre tu navegador y visita `http://localhost:5000`.
-
-Este ejercicio te da una buena introducción a la creación de una aplicación web simple con Flask y cómo dockerizarla, así como una pequeña introducción a Docker Compose.
