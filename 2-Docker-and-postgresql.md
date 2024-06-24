@@ -196,5 +196,3 @@
      ```bash
      curl http://localhost:5000/entries
      ```
-
-Este ejercicio proporciona una aplicación web más completa con Flask y PostgreSQL, mostrando cómo manejar dependencias, base de datos y volumen local utilizando Docker y Docker Compose.
