@@ -9,7 +9,7 @@
 
 2. **Crea la estructura del proyecto**: Crea un directorio para tu proyecto y dentro de él, crea un archivo Python llamado `app.py` y un archivo para manejar las dependencias `requirements.txt`:
    ```plaintext
-   my_flask_app/
+   02-my_flask_app/
    ├── app.py
    ├── requirements.txt
    └── init_db.py
@@ -104,7 +104,7 @@
    CMD ["python", "app.py"]
    ```
 
-2. **Crea un archivo `docker-compose.yml`**: En el directorio `my_flask_app`, crea un archivo llamado `docker-compose.yml` con el siguiente contenido:
+2. **Crea un archivo `docker-compose.yml`**: En el directorio `02-my_flask_app`, crea un archivo llamado `docker-compose.yml` con el siguiente contenido:
    ```yaml
    version: '3.8'
    services:
@@ -152,7 +152,7 @@
    exec "$@"
    ```
 
-   Modifica el `Dockerfile` para utilizar este script:
+5. **Modifica el `Dockerfile` para utilizar este script:
    ```Dockerfile
    # Utiliza una imagen base de Python
    FROM python:3.9-slim
@@ -180,14 +180,14 @@
    CMD ["python", "app.py"]
    ```
 
-5. **Construye y ejecuta los contenedores**:
+6. **Construye y ejecuta los contenedores**:
    ```bash
    docker-compose up --build
    ```
 
-6. **Accede a la aplicación**: Abre tu navegador y visita `http://localhost:5000`. Deberías ver el mensaje "¡Hola, Docker con PostgreSQL!".
+7. **Accede a la aplicación**: Abre tu navegador y visita `http://localhost:5000`. Deberías ver el mensaje "¡Hola, Docker con PostgreSQL!".
 
-7. **Prueba la aplicación**:
+8. **Prueba la aplicación**:
    - Para agregar una entrada, puedes usar `curl` o Postman:
      ```bash
      curl -X POST http://localhost:5000/add -H "Content-Type: application/json" -d '{"name": "Prueba"}'
