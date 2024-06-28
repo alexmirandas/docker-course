@@ -1,8 +1,8 @@
-¡Claro! A continuación, te guiaré paso a paso para construir y desplegar una aplicación web en Go (Golang) que se conecte a una base de datos PostgreSQL, utilizando Docker para facilitar el despliegue. 
+Construir y desplegar una aplicación web en Go (Golang) que se conecte a una base de datos PostgreSQL.
 
 ### 1. Preparar la Aplicación en Go
 
-Primero, crea una aplicación sencilla en Go que se conecte a PostgreSQL y permita almacenar y consultar registros. Para este ejemplo, asumamos que queremos manejar una lista de tareas.
+Primero, crea una aplicación en Go que se conecte a PostgreSQL y permita almacenar y consultar registros de una lista de tareas.
 
 #### 1.1. Crear el archivo `main.go`
 
