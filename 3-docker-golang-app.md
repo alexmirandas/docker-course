@@ -193,13 +193,13 @@ Esto construirá la imagen de la aplicación Go, iniciará un contenedor Postgre
 
 Puedes probar la aplicación utilizando `curl` o Postman para hacer peticiones `GET` y `POST` a `http://localhost:8080/tasks`.
 
-#### Ejemplo de petición POST para agregar una tarea:
+#### 5.1. Agregar un registro usando POST:
 
 ```sh
 curl -X POST -H "Content-Type: application/json" -d '{"name": "Tarea de ejemplo", "done": false}' http://localhost:8080/tasks
 ```
 
-#### Ejemplo de petición GET para obtener todas las tareas:
+#### 5.2. Petición GET para obtener todas las tareas:
 
 ```sh
 curl http://localhost:8080/tasks
