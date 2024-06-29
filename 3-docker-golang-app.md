@@ -204,5 +204,3 @@ curl -X POST -H "Content-Type: application/json" -d '{"name": "Tarea de ejemplo"
 ```sh
 curl http://localhost:8080/tasks
 ```
-
-Esto debería darte una base sólida para comenzar a construir y desplegar aplicaciones web en Go con PostgreSQL utilizando Docker.

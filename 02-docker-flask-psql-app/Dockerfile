@@ -1,26 +1,16 @@
-FROM python:3.9-slim
+FROM python:3.9-alpine
 
-# Instala bash
-RUN apt-get update && apt-get install -y bash
+# Instala las dependencias del sistema necesarias para psycopg2
+RUN apk update && apk add postgresql-dev gcc python3-dev musl-dev
 
-# Establece el directorio de trabajo
 WORKDIR /app
 
-# Copia los archivos de la aplicación al contenedor
-COPY . /app
-
-# Instala las dependencias
+COPY requirements.txt requirements.txt
+RUN pip install --upgrade pip
 RUN pip install -r requirements.txt
 
-# Copia el script de inicialización y lo hace ejecutable
-COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
-COPY init_db.sh /init_db.sh
-RUN chmod +x /init_db.sh
+COPY . .
 
-# Expone el puerto que la aplicación usará
-EXPOSE 5000
+EXPOSE 8080
 
-# Define el punto de entrada y el comando para ejecutar la aplicación
-ENTRYPOINT ["/entrypoint.sh"]
 CMD ["python", "app.py"]

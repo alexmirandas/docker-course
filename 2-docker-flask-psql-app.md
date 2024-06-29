@@ -1,198 +1,148 @@
-### Ejercicio: Crear y Dockerizar una Aplicación Web con Flask y PostgreSQL
+Construir y desplegar una aplicación web en Python con Flask como framework web y SQLAlchemy para interactuar con PostgreSQL.
 
-#### Parte 1: Crear la Aplicación Web
+### 1. Preparar la Aplicación en Python
 
-1. **Instala Flask y psycopg2**: Si aún no los tienes, instala Flask y psycopg2 utilizando pip:
-   ```bash
-   pip install flask psycopg2-binary
-   ```
+Primero, crea una aplicación en Python que se conecte a PostgreSQL y permita almacenar y consultar registros de una lista de tareas.
 
-2. **Crea la estructura del proyecto**: Crea un directorio para tu proyecto y dentro de él, crea un archivo Python llamado `app.py` y un archivo para manejar las dependencias `requirements.txt`:
-   ```plaintext
-   02-my_flask_app/
-   ├── app.py
-   ├── requirements.txt
-   └── init_db.py
-   ```
+#### 1.1. Crear el archivo `app.py`
 
-3. **Escribe el código de la aplicación**: En `app.py`, escribe el siguiente código para una aplicación Flask simple que interactúe con PostgreSQL:
-   ```python
-   from flask import Flask, request, jsonify
-   import psycopg2
+```python
+from flask import Flask, request, jsonify
+from flask_sqlalchemy import SQLAlchemy
+import os
 
-   app = Flask(__name__)
+app = Flask(__name__)
+app.config['SQLALCHEMY_DATABASE_URI'] = f"postgresql://{os.getenv('DB_USER')}:{os.getenv('DB_PASSWORD')}@{os.getenv('DB_HOST')}:{os.getenv('DB_PORT')}/{os.getenv('DB_NAME')}"
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+db = SQLAlchemy(app)
 
-   def get_db_connection():
-       conn = psycopg2.connect(host="db", database="mydatabase", user="myuser", password="mypassword")
-       return conn
+class Task(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    done = db.Column(db.Boolean, default=False)
 
-   @app.route('/')
-   def home():
-       return "¡Hola, Docker con PostgreSQL!"
+@app.route('/tasks', methods=['GET', 'POST'])
+def handle_tasks():
+    if request.method == 'GET':
+        tasks = Task.query.all()
+        return jsonify([{'id': task.id, 'name': task.name, 'done': task.done} for task in tasks])
+    elif request.method == 'POST':
+        data = request.get_json()
+        new_task = Task(name=data['name'], done=data['done'])
+        db.session.add(new_task)
+        db.session.commit()
+        return jsonify({'id': new_task.id, 'name': new_task.name, 'done': new_task.done})
 
-   @app.route('/add', methods=['POST'])
-   def add_entry():
-       data = request.get_json()
-       name = data['name']
-       conn = get_db_connection()
-       cur = conn.cursor()
-       cur.execute('INSERT INTO entries (name) VALUES (%s)', (name,))
-       conn.commit()
-       cur.close()
-       conn.close()
-       return jsonify({"message": "Entry added"}), 201
+@app.route('/tasks/<int:task_id>', methods=['GET', 'PUT', 'DELETE'])
+def handle_task(task_id):
+    task = Task.query.get_or_404(task_id)
+    if request.method == 'GET':
+        return jsonify({'id': task.id, 'name': task.name, 'done': task.done})
+    elif request.method == 'PUT':
+        data = request.get_json()
+        task.name = data['name']
+        task.done = data['done']
+        db.session.commit()
+        return jsonify({'id': task.id, 'name': task.name, 'done': task.done})
+    elif request.method == 'DELETE':
+        db.session.delete(task)
+        db.session.commit()
+        return '', 204
 
-   @app.route('/entries', methods=['GET'])
-   def get_entries():
-       conn = get_db_connection()
-       cur = conn.cursor()
-       cur.execute('SELECT * FROM entries')
-       entries = cur.fetchall()
-       cur.close()
-       conn.close()
-       return jsonify(entries)
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=8080)
+```
 
-   if __name__ == '__main__':
-       app.run(host='0.0.0.0', port=5000)
-   ```
+#### 1.2. Crear el archivo `Dockerfile`
 
-4. **Especifica las dependencias**: En el archivo `requirements.txt`, añade Flask y psycopg2:
-   ```plaintext
-   Flask==2.1.1
-   psycopg2-binary==2.9.3
-   ```
+```Dockerfile
+FROM python:3.9-alpine
 
-5. **Inicializa la base de datos**: En `init_db.py`, escribe el siguiente código para crear la tabla en PostgreSQL:
-   ```python
-   import psycopg2
+WORKDIR /app
 
-   conn = psycopg2.connect(host="db", database="mydatabase", user="myuser", password="mypassword")
-   cur = conn.cursor()
+COPY requirements.txt requirements.txt
+RUN pip install -r requirements.txt
 
-   cur.execute('''
-       CREATE TABLE IF NOT EXISTS entries (
-           id SERIAL PRIMARY KEY,
-           name TEXT NOT NULL
-       )
-   ''')
+COPY . .
 
-   conn.commit()
-   cur.close()
-   conn.close()
-   ```
+EXPOSE 8080
 
-#### Parte 2: Dockerizar la Aplicación y la Base de Datos
+CMD ["python", "app.py"]
+```
 
-1. **Crea un Dockerfile**: En el directorio `my_flask_app`, crea un archivo llamado `Dockerfile` y añade el siguiente contenido:
-   ```Dockerfile
-   # Utiliza una imagen base de Python
-   FROM python:3.9-slim
+#### 1.3. Crear el archivo `requirements.txt`
 
-   # Establece el directorio de trabajo
-   WORKDIR /app
+```text
+Flask==2.0.2
+Flask-SQLAlchemy==2.5.1
+psycopg2-binary==2.9.1
+```
 
-   # Copia los archivos de la aplicación al contenedor
-   COPY . /app
+### 2. Inicializar el Proyecto
 
-   # Instala las dependencias
-   RUN pip install -r requirements.txt
+#### 2.1. Crear el archivo `init.sql`
 
-   # Expone el puerto que la aplicación usará
-   EXPOSE 5000
+```sql
+CREATE TABLE IF NOT EXISTS tasks (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    done BOOLEAN NOT NULL DEFAULT FALSE
+);
+```
 
-   # Define el comando para ejecutar la aplicación
-   CMD ["python", "app.py"]
-   ```
+#### 2.2. Crear el archivo `docker-compose.yml`
 
-2. **Crea un archivo `docker-compose.yml`**: En el directorio `02-my_flask_app`, crea un archivo llamado `docker-compose.yml` con el siguiente contenido:
-   ```yaml
-   version: '3.8'
-   services:
-     web:
-       build: .
-       ports:
-         - "5000:5000"
-       volumes:
-         - .:/app
-       depends_on:
-         - db
-     db:
-       image: postgres:13
-       environment:
-         POSTGRES_DB: mydatabase
-         POSTGRES_USER: myuser
-         POSTGRES_PASSWORD: mypassword
-       volumes:
-         - pgdata:/var/lib/postgresql/data
-   volumes:
-     pgdata:
-   ```
+```yaml
+version: '3.8'
 
-3. **Inicializa la base de datos**: Crea un archivo `init_db.sh` para inicializar la base de datos y ejecutarlo como un servicio:
-   ```bash
-   #!/bin/bash
-   # Espera hasta que PostgreSQL esté listo
-   while ! pg_isready -h db -p 5432 -U myuser > /dev/null 2> /dev/null; do
-       sleep 1
-   done
+services:
+  db:
+    image: postgres:13
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: tasks_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
 
-   python init_db.py
-   ```
+  web:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: user
+      DB_PASSWORD: password
+      DB_NAME: tasks_db
+    depends_on:
+      - db
 
-4. **Crea un archivo `entrypoint.sh`**: Crea un archivo `entrypoint.sh` para inicializar la base de datos:
-   ```bash
-   #!/bin/bash
+volumes:
+  postgres_data:
+```
 
-   set -e
+### 3. Construir y Desplegar la Aplicación
 
-   # Ejecuta el script de inicialización de la base de datos
-   /app/init_db.sh
+#### 3.1. Ejecutar Docker Compose
 
-   # Ejecuta el servidor Flask
-   exec "$@"
-   ```
+```sh
+docker-compose up --build -d
+```
 
-5. **Modifica el `Dockerfile` para utilizar este script:
-   ```Dockerfile
-   # Utiliza una imagen base de Python
-   FROM python:3.9-slim
+### 4. Probar la Aplicación
 
-   # Establece el directorio de trabajo
-   WORKDIR /app
+#### 4.1. Agregar un registro usando POST:
 
-   # Copia los archivos de la aplicación al contenedor
-   COPY . /app
+```sh
+curl -X POST -H "Content-Type: application/json" -d '{"name": "Tarea de ejemplo", "done": false}' http://localhost:8080/tasks
+```
 
-   # Instala las dependencias
-   RUN pip install -r requirements.txt
+#### 4.2. Petición GET para obtener todas las tareas:
 
-   # Copia el script de inicialización y lo hace ejecutable
-   COPY entrypoint.sh /entrypoint.sh
-   RUN chmod +x /entrypoint.sh
-   COPY init_db.sh /init_db.sh
-   RUN chmod +x /init_db.sh
-
-   # Expone el puerto que la aplicación usará
-   EXPOSE 5000
-
-   # Define el punto de entrada y el comando para ejecutar la aplicación
-   ENTRYPOINT ["/entrypoint.sh"]
-   CMD ["python", "app.py"]
-   ```
-
-6. **Construye y ejecuta los contenedores**:
-   ```bash
-   docker-compose up --build
-   ```
-
-7. **Accede a la aplicación**: Abre tu navegador y visita `http://localhost:5000`. Deberías ver el mensaje "¡Hola, Docker con PostgreSQL!".
-
-8. **Prueba la aplicación**:
-   - Para agregar una entrada, puedes usar `curl` o Postman:
-     ```bash
-     curl -X POST http://localhost:5000/add -H "Content-Type: application/json" -d '{"name": "Prueba"}'
-     ```
-   - Para ver las entradas:
-     ```bash
-     curl http://localhost:5000/entries
-     ```
+```sh
+curl http://localhost:8080/tasks
+```
