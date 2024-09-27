@@ -5,7 +5,7 @@ metadata:
   labels:
     app: go-web-app
 spec:
-  replicas: 3
+  replicas: 1  # Start with 1 replica
   selector:
     matchLabels:
       app: go-web-app
@@ -19,6 +19,13 @@ spec:
         image: go-web-app:latest
         ports:
         - containerPort: 8080
+        resources:
+          requests:
+            cpu: "100m"  # Minimum CPU request per pod
+            memory: "128Mi"  # Minimum memory request per pod
+          limits:
+            cpu: "200m"  # Maximum CPU limit per pod
+            memory: "256Mi"  # Maximum memory limit per pod
 ---
 apiVersion: v1
 kind: Service
@@ -32,3 +39,22 @@ spec:
       port: 80
       targetPort: 8080
   type: LoadBalancer
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: go-web-app-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: go-web-app
+  minReplicas: 1  # Minimum number of replicas
+  maxReplicas: 3  # Maximum number of replicas
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 50  # Target 50% CPU utilization

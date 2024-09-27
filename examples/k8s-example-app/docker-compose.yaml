@@ -1,0 +1,22 @@
+version: '3.8'
+services:
+  go-web-app:
+    image: go-web-app:latest
+    build: .
+    ports:
+      - "8080:8080"
+    deploy:
+      replicas: 1 # Initial replica count
+      resources:
+        limits:
+          cpus: '0.5'  # Set CPU limit per container
+          memory: 200M  # Set memory limit per container
+      update_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+      autoscale:
+        min: 1
+        max: 3  # Max replicas allowed
+    restart: always
